@@ -19,7 +19,10 @@ The host's firewall may ask whether to allow local network access. Rooms are hel
 
 ## How to play
 
-- Each round, most players receive the same word. One randomly selected player receives a different, related word. Everyone gives one clue, then the group votes for who had the different word.
+- Before each round, every player privately sees whether they are the imposter and sees their word. The clue round begins after everyone confirms they are ready.
+- Most players receive the same word. The imposter gets a different, related word. As soon as a player submits a clue, everyone can see it while the remaining players are still thinking.
+- New clues also appear in a right-side pop-up with the player's name and a short notification chime.
+- After everyone submits a clue, the group votes for who had the different word.
 - **3–8 players:** finding the imposter gives each non-imposter 1 point. If the imposter escapes, including a tie, they earn 2 points. If caught, the imposter can guess the shared word for 2 bonus points.
 - **2 players:** after both clues, the different-word player guesses the other player's word. A correct guess earns the imposter 2 points; a miss earns the other player 1 point.
 - Play five rounds. The highest score wins.

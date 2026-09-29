@@ -14,8 +14,8 @@ function publicState(room, playerId) {
   const me = room.players.find(p => p.id === playerId);
   return {
     code: room.code, hostId: room.hostId, phase: room.phase, round: room.round, rounds: room.rounds,
-    players: room.players.map(p => ({id:p.id,name:p.name,score:p.score,ready:p.ready,mic:!!p.mic,clue: room.phase === 'vote' || room.phase === 'reveal' || room.phase === 'score' ? p.clue : undefined, voted: !!p.vote})),
-    me: me ? {id:me.id,name:me.name,role: room.phase === 'clue' || room.phase === 'vote' || room.phase === 'duel' ? me.role : undefined, word: room.phase === 'clue' || room.phase === 'vote' || room.phase === 'duel' ? (me.role === 'imposter' ? room.imposterWord : room.word) : undefined, clue:me.clue,hasVoted:!!me.vote} : null,
+    players: room.players.map(p => ({id:p.id,name:p.name,score:p.score,ready:p.ready,roundReady:!!p.roundReady,mic:!!p.mic,clue: room.phase === 'clue' || room.phase === 'vote' || room.phase === 'reveal' || room.phase === 'score' ? p.clue : undefined, voted: !!p.vote})),
+    me: me ? {id:me.id,name:me.name,role: room.phase === 'intro' || room.phase === 'clue' || room.phase === 'vote' || room.phase === 'duel' ? me.role : undefined, word: room.phase === 'intro' || room.phase === 'clue' || room.phase === 'vote' || room.phase === 'duel' ? (me.role === 'imposter' ? room.imposterWord : room.word) : undefined, roundReady:!!me.roundReady,clue:me.clue,hasVoted:!!me.vote} : null,
     word: room.phase === 'reveal' || room.phase === 'score' ? room.word : undefined,
     imposterWord: room.phase === 'reveal' || room.phase === 'score' ? room.imposterWord : undefined,
     imposterId: room.phase === 'reveal' || room.phase === 'score' ? room.imposterId : undefined,
@@ -29,8 +29,8 @@ function roomFor(body) { return rooms.get(String(body.code || '').toUpperCase())
 function startRound(room) {
   const selected = wordPairs[Math.floor(Math.random() * wordPairs.length)];
   const swapped = Math.random() < 0.5; room.word = selected[swapped ? 1 : 0]; room.imposterWord = selected[swapped ? 0 : 1]; room.imposterId = room.players[Math.floor(Math.random()*room.players.length)].id;
-  room.players.forEach(p => { p.role = p.id === room.imposterId ? 'imposter' : 'player'; p.clue=''; p.vote=''; });
-  room.phase='clue'; room.message='Everyone gets a word. One player has a different word—give a clue and spot them.'; room.winner='';
+  room.players.forEach(p => { p.role = p.id === room.imposterId ? 'imposter' : 'player'; p.clue=''; p.vote=''; p.roundReady=false; });
+  room.phase='intro'; room.message='Check your private role and word. The round begins when everyone is ready.'; room.winner='';
 }
 function nextRound(room) { room.round++; if (room.round > room.rounds) { room.phase='score'; room.message='Game complete'; return; } startRound(room); }
 function act(body) {
@@ -41,6 +41,10 @@ function act(body) {
     if (room.hostId !== player.id) throw Error('Only the host can start the game.');
     if (room.players.length < 2) throw Error('Invite at least one more player to start.');
     room.round=1; startRound(room);
+  } else if (body.action === 'readyRound') {
+    if(room.phase!=='intro') throw Error('The role check is closed.');
+    player.roundReady=true;
+    if(room.players.every(p=>p.roundReady)){room.phase='clue';room.message='Share one clue for your word. Clues appear to everyone as soon as they are submitted.';}
   } else if (body.action === 'clue') {
     if (room.phase !== 'clue') throw Error('Clue round is over.');
     const clue=String(body.clue || '').trim().slice(0,80); if (!clue) throw Error('Write a clue first.');
@@ -87,6 +91,7 @@ const server=http.createServer((req,res)=>{
   }
   if(req.method==='GET' && url.pathname==='/api/session') { const room=rooms.get(String(url.searchParams.get('code')||'').toUpperCase()), playerId=url.searchParams.get('playerId'); if(!room||!room.players.some(p=>p.id===playerId))return response(res,404,{error:'Room session ended'}); return response(res,200,{ok:true}); }
   if(req.method==='GET' && url.pathname==='/voice.js') { const file=path.join(__dirname,'voice.js');res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});fs.createReadStream(file).pipe(res);return; }
+  if(req.method==='GET' && url.pathname==='/clue-alerts.js') { const file=path.join(__dirname,'clue-alerts.js');res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});fs.createReadStream(file).pipe(res);return; }
   if(req.method==='GET' && url.pathname==='/') { const file=path.join(__dirname,'index.html'); res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'}); fs.createReadStream(file).pipe(res); return; }
   if(req.method==='GET' && url.pathname==='/health'){res.writeHead(200,{'Content-Type':'text/plain'});res.end('Blend In is running');return;}
   if(req.method==='POST') { let raw=''; req.on('data',c=>raw+=c); req.on('end',()=>{try{const body=JSON.parse(raw||'{}'); if(url.pathname==='/api/create'){
