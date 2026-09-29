@@ -1,0 +1,27 @@
+﻿# Blend In
+
+A lightweight real-time social deduction game for 2–8 players. Players join the same room from their own browser using a room code. No external packages or account setup are required.
+
+## Run it
+
+1. Install Node.js 18 or newer.
+2. Open a terminal in this folder and run `node server.js`.
+3. On the host device, open `http://localhost:3000`.
+4. For friends on the same Wi-Fi, share the host device's local network address with port `3000` (for example, `http://192.168.1.20:3000`). They can join with your room code.
+
+## Group voice
+
+After joining a room, tap **Turn mic on** to allow microphone access and talk with the group. Tap **Mute mic** whenever you want to stop sending audio. The mic indicator shows who is currently unmuted. Each player must allow microphone access on their own device.
+
+Browsers only grant microphone access on secure pages. `http://localhost:3000` works on the host computer, but other devices need the game served over HTTPS. When players are on different networks, a TURN relay may also be needed for reliable voice connections.
+
+The host's firewall may ask whether to allow local network access. Rooms are held in server memory and disappear when the server stops. For players joining from different networks, deploy the folder on a publicly reachable Node.js host and share its URL.
+
+## How to play
+
+- Each round, most players receive the same word. One randomly selected player receives a different, related word. Everyone gives one clue, then the group votes for who had the different word.
+- **3–8 players:** finding the imposter gives each non-imposter 1 point. If the imposter escapes, including a tie, they earn 2 points. If caught, the imposter can guess the shared word for 2 bonus points.
+- **2 players:** after both clues, the different-word player guesses the other player's word. A correct guess earns the imposter 2 points; a miss earns the other player 1 point.
+- Play five rounds. The highest score wins.
+
+Each device keeps its room session in browser storage so a refresh reconnects to the same player while the server is running.
