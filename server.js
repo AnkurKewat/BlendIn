@@ -21,6 +21,7 @@ function publicState(room, playerId) {
     imposterWord: room.phase === 'reveal' || room.phase === 'score' ? room.imposterWord : undefined,
     imposterId: room.phase === 'reveal' || room.phase === 'score' ? room.imposterId : undefined,
     winner:room.winner, message:room.message, duel: room.players.length === 2,
+    chat: (room.chat || []).slice(-60),
   };
 }
 const clients = new Map();
@@ -50,6 +51,9 @@ function act(body) {
     if (room.phase !== 'clue') throw Error('Clue round is over.');
     const clue=String(body.clue || '').trim().slice(0,80); if (!clue) throw Error('Write a clue first.');
     player.clue=clue;
+    room.chat ||= [];
+    room.chat.push({id:uid(),type:'clue',playerId:player.id,name:player.name,avatar:player.avatar,text:clue,at:Date.now()});
+    if(room.chat.length>100)room.chat.splice(0,room.chat.length-100);
     if (room.players.every(p => p.clue)) { room.phase=room.players.length===2?'duel':'vote'; room.message=room.players.length===2?'Imposter: guess the secret word from the clues.':'Clues are in. Talk it out, then vote.'; }
   } else if (body.action === 'duelGuess') {
     if(room.phase!=='duel' || player.id!==room.imposterId) throw Error('Only the imposter can make the duel guess.');
@@ -93,11 +97,13 @@ const server=http.createServer((req,res)=>{
   if(req.method==='GET' && url.pathname==='/api/session') { const room=rooms.get(String(url.searchParams.get('code')||'').toUpperCase()), playerId=url.searchParams.get('playerId'); if(!room||!room.players.some(p=>p.id===playerId))return response(res,404,{error:'Room session ended'}); return response(res,200,{ok:true}); }
   if(req.method==='GET' && url.pathname==='/voice.js') { const file=path.join(__dirname,'voice.js');res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});fs.createReadStream(file).pipe(res);return; }
   if(req.method==='GET' && url.pathname==='/clue-alerts.js') { const file=path.join(__dirname,'clue-alerts.js');res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});fs.createReadStream(file).pipe(res);return; }
+  if(req.method==='GET' && url.pathname==='/chat.js') { const file=path.join(__dirname,'chat.js');res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});fs.createReadStream(file).pipe(res);return; }
   if(req.method==='GET' && url.pathname==='/') { const file=path.join(__dirname,'index.html'); res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'}); fs.createReadStream(file).pipe(res); return; }
   if(req.method==='GET' && url.pathname==='/health'){res.writeHead(200,{'Content-Type':'text/plain'});res.end('Blend In is running');return;}
   if(req.method==='POST') { let raw=''; req.on('data',c=>raw+=c); req.on('end',()=>{try{const body=JSON.parse(raw||'{}'); if(url.pathname==='/api/create'){
-      const c=code(), id=uid(), name=String(body.name||'Player 1').trim().slice(0,20)||'Player 1', avatar=avatars.includes(body.avatar)?body.avatar:avatars[0]; const room={code:c,hostId:id,phase:'lobby',round:0,rounds:5,players:[{id,name,avatar,score:0,ready:true,clue:'',vote:''}],word:'',category:'',imposterId:'',winner:'',message:'Waiting for players to join…'}; rooms.set(c,room); return response(res,200,{code:c,playerId:id,state:publicState(room,id)});
+      const c=code(), id=uid(), name=String(body.name||'Player 1').trim().slice(0,20)||'Player 1', avatar=avatars.includes(body.avatar)?body.avatar:avatars[0]; const room={code:c,hostId:id,phase:'lobby',round:0,rounds:5,players:[{id,name,avatar,score:0,ready:true,clue:'',vote:''}],chat:[],word:'',category:'',imposterId:'',winner:'',message:'Waiting for players to join…'}; rooms.set(c,room); return response(res,200,{code:c,playerId:id,state:publicState(room,id)});
     } if(url.pathname==='/api/join') { const room=roomFor(body); if(!room)return response(res,404,{error:'Room not found. Check the code and try again.'}); if(room.phase!=='lobby')return response(res,409,{error:'This game has already started.'}); if(room.players.length>=8)return response(res,409,{error:'This room is full (8 players max).'}); const name=String(body.name||'Player').trim().slice(0,20)||'Player'; if(room.players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return response(res,409,{error:'That name is already taken in this room.'}); const id=uid(), avatar=avatars.includes(body.avatar)?body.avatar:avatars[0]; room.players.push({id,name,avatar,score:0,ready:true,clue:'',vote:''}); sendRoom(room); return response(res,200,{code:room.code,playerId:id,state:publicState(room,id)});
+    } if(url.pathname==='/api/chat') { const room=roomFor(body),player=room?.players.find(p=>p.id===body.playerId);if(!room||!player)return response(res,404,{error:'Player or room not found'});const text=String(body.text||'').trim().slice(0,300);if(!text)return response(res,400,{error:'Write a message first.'});room.chat ||= [];room.chat.push({id:uid(),playerId:player.id,name:player.name,avatar:player.avatar,text,at:Date.now()});if(room.chat.length>100)room.chat.splice(0,room.chat.length-100);sendRoom(room);return response(res,200,{ok:true});
     } if(url.pathname==='/api/action') { try{return response(res,200,{state:act(body)});}catch(e){return response(res,400,{error:e.message});} }
     if(url.pathname==='/api/voice') { const room=roomFor(body),player=room?.players.find(p=>p.id===body.playerId);if(!player)return response(res,404,{error:'Player or room not found'});player.mic=!!body.enabled;sendRoom(room);return response(res,200,{ok:true}); }
     if(url.pathname==='/api/signal') { const room=roomFor(body),sender=room?.players.find(p=>p.id===body.playerId),target=room?.players.find(p=>p.id===body.targetId);if(!sender||!target)return response(res,404,{error:'Player or room not found'});if(!body.signal||!['description','candidate'].includes(body.signal.type))return response(res,400,{error:'Invalid voice signal'});const payload=JSON.stringify({from:sender.id,signal:body.signal});for(const [stream,info] of clients)if(info.code===room.code&&info.playerId===target.id){try{stream.write(`event: signal\ndata: ${payload}\n\n`)}catch{}}return response(res,200,{ok:true}); }

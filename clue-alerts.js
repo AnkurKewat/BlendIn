@@ -81,39 +81,6 @@ function observeRoundOutcome() {
   }
 }
 
-function showClueNotice(player, clue) {
-  const stack = document.querySelector('#clueNotifications');
-  if (!stack) return;
-  const notice = document.createElement('article');
-  notice.className = 'clue-pop';
-  const head = document.createElement('div');
-  head.className = 'clue-pop-head';
-  const person = document.createElement('div');
-  person.className = 'clue-pop-person';
-  const avatar = document.createElement('span');
-  avatar.className = 'clue-pop-avatar';
-  avatar.textContent = player.avatar || '😎';
-  const name = document.createElement('span');
-  name.className = 'clue-pop-name';
-  name.textContent = player.name;
-  const label = document.createElement('span');
-  label.className = 'clue-pop-label';
-  label.textContent = 'NEW CLUE';
-  const text = document.createElement('div');
-  text.className = 'clue-pop-text';
-  text.textContent = `“${clue}”`;
-  person.append(avatar, name);
-  head.append(person, label);
-  notice.append(head, text);
-  stack.prepend(notice);
-  while (stack.children.length > 3) stack.lastElementChild.remove();
-  playClueChime();
-  window.setTimeout(() => {
-    notice.classList.add('clue-pop-out');
-    window.setTimeout(() => notice.remove(), 300);
-  }, 5200);
-}
-
 function observeClues() {
   if (!saved || !state) {
     lastClues.clear();
@@ -141,7 +108,7 @@ function observeClues() {
     const clue = player.clue || '';
     const previous = lastClues.get(player.id) || '';
     if (player.id !== saved.playerId && clue && clue !== previous && (state.phase === 'clue' || state.phase === 'vote')) {
-      showClueNotice(player, clue);
+      playClueChime();
     }
     lastClues.set(player.id, clue);
   }
