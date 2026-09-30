@@ -21,7 +21,9 @@ The host's firewall may ask whether to allow local network access. Rooms are hel
 
 - Before each round, every player privately sees whether they are the imposter and sees their word. The clue round begins after everyone confirms they are ready.
 - Most players receive the same word. The imposter gets a different, related word. As soon as a player submits a clue, everyone can see it while the remaining players are still thinking.
-- New clues also appear in a right-side pop-up with the player's name and a short notification chime.
+- Choose one of six funny face avatars when entering a room. The avatar appears beside the player's name, including in clue notifications.
+- New clues also appear in a right-side pop-up with the player's avatar, name, and a short notification chime.
+- A cheerful tune plays when the group catches the imposter; a descending sad tune plays when the imposter wins.
 - After everyone submits a clue, the group votes for who had the different word.
 - **3–8 players:** finding the imposter gives each non-imposter 1 point. If the imposter escapes, including a tie, they earn 2 points. If caught, the imposter can guess the shared word for 2 bonus points.
 - **2 players:** after both clues, the different-word player guesses the other player's word. A correct guess earns the imposter 2 points; a miss earns the other player 1 point.
