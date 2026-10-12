@@ -189,3 +189,10 @@ test('a valid but empty saved-room file does not crash startup recovery', () => 
   assert.doesNotThrow(() => restoreRooms());
   assert.equal(rooms.size, 0);
 });
+
+test('public privacy page describes room retention and voice handling', () => {
+  const page = fs.readFileSync(path.join(__dirname, '..', 'privacy.html'), 'utf8');
+  assert.match(page, /removed from the game's active store after 48 hours without room activity/i);
+  assert.match(page, /does not record or save voice audio/i);
+  assert.match(page, /Google Fonts/);
+});
