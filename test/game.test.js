@@ -81,6 +81,24 @@ test('two-player clues stay visible and submitted clues are locked', () => {
   assert.ok(savedRooms.rooms.some(savedRoom => savedRoom.code === room.code));
 });
 
+test('each player receives only their own role and word', () => {
+  const room = makeRoom(5);
+  const [host] = room.players;
+  doAction(room, host, 'start');
+  room.players.forEach(player => doAction(room, player, 'readyRound'));
+
+  for (const player of room.players) {
+    const state = publicState(room, player.id);
+    assert.ok(['player', 'imposter'].includes(state.me.role));
+    assert.equal(state.me.word, state.me.role === 'imposter' ? room.imposterWord : room.word);
+    for (const otherPlayer of state.players) {
+      assert.equal(Object.hasOwn(otherPlayer, 'role'), false);
+      assert.equal(Object.hasOwn(otherPlayer, 'word'), false);
+      assert.equal(Object.hasOwn(otherPlayer, 'imposterWord'), false);
+    }
+  }
+});
+
 test('escaped imposters cannot take the caught-player bonus', () => {
   const room = makeRoom(4);
   const [host, ...players] = room.players;
@@ -123,6 +141,24 @@ test('caught imposter receives one final word guess', () => {
   assert.equal(result.players.find(player => player.id === imposter.id).score, 2);
   assert.throws(() => doAction(room, imposter, 'guess', { guess: room.word }), /final guess/i);
   assert.equal(doAction(room, host, 'next').round, 2);
+});
+
+test('a tied vote awards the imposter two points and no group points', () => {
+  const room = makeRoom(4);
+  const [host, firstTarget] = room.players;
+  doAction(room, host, 'start');
+  room.players.forEach(player => doAction(room, player, 'readyRound'));
+  room.players.forEach((player, index) => doAction(room, player, 'clue', { clue: `clue ${index}` }));
+
+  for (const player of room.players) {
+    const target = player === host || player === room.players[3] ? firstTarget : host;
+    doAction(room, player, 'vote', { targetId: target.id });
+  }
+
+  assert.equal(room.phase, 'reveal');
+  assert.equal(room.winner, 'imposter');
+  assert.equal(room.players.find(player => player.id === room.imposterId).score, 2);
+  assert.ok(room.players.filter(player => player.id !== room.imposterId).every(player => player.score === 0));
 });
 
 test('TURN credentials are short-lived and derived from the shared secret', () => {
