@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#f4f0e8">
   <meta name="description" content="What Blend In stores, how long it is kept, and how voice chat works.">
   <title>Privacy &amp; data — Blend In</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
   <style>
     :root{color-scheme:light;--paper:#f4f0e8;--ink:#171916;--muted:#66685f;--line:#d9d4c9;--acid:#dcff55;--green:#2e5d48;--card:#fffdf8}
     *{box-sizing:border-box}
@@ -13,7 +14,7 @@
     .page{width:min(760px,100% - 36px);margin:0 auto;padding:28px 0 56px}
     .top{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line)}
     .brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;letter-spacing:-.5px}
-    .mark{display:grid;width:30px;height:30px;place-items:center;border:1px solid var(--ink);border-radius:9px;background:var(--acid);transform:rotate(-5deg)}
+    .mark{display:block;width:30px;height:30px;transform:rotate(-5deg)}
     a{color:var(--green);font-weight:650;text-underline-offset:3px}
     .back{font-size:14px}
     h1{margin:44px 0 8px;font-size:clamp(38px,8vw,62px);line-height:1;letter-spacing:-2.5px}
@@ -32,7 +33,7 @@
 <body>
   <main class="page">
     <header class="top">
-      <div class="brand"><span class="mark" aria-hidden="true">✳</span> BLEND IN</div>
+      <div class="brand"><img class="mark" src="/favicon.svg" alt=""> BLEND IN</div>
       <a class="back" href="/">Back to the game</a>
     </header>
     <h1>Privacy &amp; data</h1>
