@@ -32,7 +32,7 @@ function renderChat() {
     chatMessageSignature = '';
     chatKnownMessageIds = new Set();
     chatHasInitialSnapshot = false;
-    panel.innerHTML = `<div class="chat-head"><div><div class="chat-title">Group chat</div><div class="chat-count">Messages stay in this room</div></div></div>
+    panel.innerHTML = `<div class="chat-head"><div><div class="chat-title">Group chat</div><div class="chat-count">Messages stay in this room</div></div><button class="chat-close" id="chatClose" type="button" aria-label="Close chat">×</button></div>
       <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
       <form class="chat-form" id="chatForm"><input class="chat-input" id="chatInput" maxlength="300" placeholder="Message the group…" autocomplete="off" aria-label="Chat message"><button class="chat-send" type="submit">Send</button></form>`;
     panel.querySelector('#chatForm').addEventListener('submit', async event => {
@@ -48,6 +48,7 @@ function renderChat() {
         toast(error.message || 'Could not send the message.');
       }
     });
+    panel.querySelector('#chatClose').addEventListener('click', () => { chatExpanded = false; renderChat(); });
   }
 
   const messages = state.chat || [];

@@ -1,6 +1,22 @@
 let voiceStream = null;
 let voiceEnabled = false;
 const voicePeers = new Map();
+let configuredIceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+async function loadIceServers() {
+  configuredIceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+  if (!saved) return configuredIceServers;
+  const session = { code: saved.code, playerId: saved.playerId };
+  try {
+    const query = new URLSearchParams(session);
+    const response = await fetch(`/api/ice-servers?${query}`);
+    if (response.ok) {
+      const result = await response.json();
+      if (saved?.code === session.code && saved?.playerId === session.playerId && Array.isArray(result.iceServers) && result.iceServers.length) configuredIceServers = result.iceServers;
+    }
+  } catch {}
+  return configuredIceServers;
+}
+let iceServersReady = Promise.resolve(configuredIceServers);
 
 function signalTo(playerId, signal) {
   if (!saved) return;
@@ -17,9 +33,11 @@ function attachLocalVoiceTracks(peer) {
   });
 }
 
-function createVoicePeer(playerId) {
+async function createVoicePeer(playerId) {
   if (voicePeers.has(playerId)) return voicePeers.get(playerId);
-  const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  await iceServersReady;
+  if (voicePeers.has(playerId)) return voicePeers.get(playerId);
+  const pc = new RTCPeerConnection({ iceServers: configuredIceServers });
   const peer = {
     pc,
     polite: saved.playerId.localeCompare(playerId) > 0,
@@ -62,7 +80,7 @@ function createVoicePeer(playerId) {
 
 async function receiveVoiceSignal(message) {
   if (!saved || !message?.from || !message.signal) return;
-  const peer = createVoicePeer(message.from);
+  const peer = await createVoicePeer(message.from);
   const { pc } = peer;
   const signal = message.signal;
   try {
@@ -82,12 +100,12 @@ async function receiveVoiceSignal(message) {
   } catch {}
 }
 
-function syncVoicePeers() {
+async function syncVoicePeers() {
   if (!saved || !state) return;
   for (const player of state.players) {
     if (player.id === saved.playerId) continue;
     let peer = voicePeers.get(player.id);
-    if ((voiceStream || player.mic) && !peer) peer = createVoicePeer(player.id);
+    if ((voiceStream || player.mic) && !peer) peer = await createVoicePeer(player.id);
     if (peer) attachLocalVoiceTracks(peer);
   }
 }
@@ -162,6 +180,7 @@ renderEntry = function (...args) {
 
 const originalConnectWithVoice = connect;
 connect = function (...args) {
+  iceServersReady = loadIceServers();
   originalConnectWithVoice(...args);
   if (eventSource) eventSource.addEventListener('signal', event => {
     receiveVoiceSignal(JSON.parse(event.data));
@@ -169,6 +188,7 @@ connect = function (...args) {
 };
 
 if (eventSource) eventSource.addEventListener('signal', event => receiveVoiceSignal(JSON.parse(event.data)));
+if (saved) iceServersReady = loadIceServers();
 renderVoiceDock();
 
 window.addEventListener('pagehide', releaseVoice);

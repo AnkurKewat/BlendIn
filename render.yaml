@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: blend-in
+    runtime: node
+    plan: 0.5c-512mb
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: blend-in-room-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BLEND_IN_DATA_DIR
+        value: /var/data
+      - key: BLEND_IN_TURN_URLS
+        sync: false
+      - key: BLEND_IN_TURN_SECRET
+        sync: false
