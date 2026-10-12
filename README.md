@@ -38,6 +38,8 @@ Use the provider's HTTPS and `PORT` settings. The health check is `GET /health`.
 ## Data and privacy
 
 The server stores room names, scores, clues, and chat messages in the room file for reconnects. Rooms expire after 48 hours without activity. Player session IDs are stored in the browser's local storage; anyone with access to a player's device can rejoin as that player. Avoid sharing private or sensitive information in game chat.
+
+Players can open the in-app Privacy & data page at `/privacy` before joining. It explains the room data, retention, browser session, microphone, and third-party services. Add a project support contact before a broad public launch; for a private playtest, tell players to contact the person who shared the room code.
 ## Render deployment
 
 This repository includes `render.yaml` for a single-instance Render web service. It enables HTTPS, configures `/health`, and mounts persistent room storage at `/var/data`. It uses a paid compute plan because Render Free web services do not support persistent disks. For a temporary free preview, remove the `disk` section and the persistent data setting; room state may be lost when the service restarts.
